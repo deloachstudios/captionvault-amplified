@@ -1985,7 +1985,6 @@ document.getElementById("unlock-btn").addEventListener("click", async () => {
   const code = (document.getElementById("access-code").value || "").trim();
   if(!code){ setGateMessage("Type a code first."); return; }
 
-  setGateMessage("Checking code...");
   try{
     const result = await validateCode(code);
     if(result.ok && result.valid){
