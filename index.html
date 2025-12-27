@@ -1988,6 +1988,7 @@ function saveCode(code){ localStorage.setItem("cv_access_code", code); }
 function loadCode(){ return localStorage.getItem("cv_access_code") || ""; }
 
 document.getElementById("unlock-btn").addEventListener("click", async () => {
+ setGateMessage("Clicked… checking code");
   const code = (document.getElementById("access-code").value || "").trim();
   if(!code){ setGateMessage("Type a code first."); return; }
 
