@@ -457,9 +457,41 @@
   </style>
   <style>@view-transition { navigation: auto; }</style>
  </head>
- <body>
-  <div class="app-container">
-   <div class="header">
+ <div id="gate" style="max-width:520px;margin:24px auto;padding:16px;border:1px solid #333;border-radius:12px;">
+  <h2 style="margin:0 0 8px;">Enter Access Code</h2>
+  <p style="margin:0 0 12px;opacity:.85;">This tool is gated. No code = no party.</p>
+  <input id="access-code" placeholder="e.g. NOVA-7H3K-2025" style="width:100%;padding:10px;border-radius:10px;border:1px solid #444;background:#111;color:#fff;" />
+  <button id="unlock-btn" style="margin-top:10px;width:100%;padding:10px;border-radius:10px;border:0;background:#6d28d9;color:#fff;font-weight:700;">
+    Unlock
+  </button>
+  <div id="gate-msg" style="margin-top:10px;font-size:14px;"></div>
+</div>
+
+<div id="app" style="display:none;">
+  <!-- your existing app UI goes here -->
+</div>
+<body>
+
+  <!-- 🔒 ACCESS GATE UI (PASTE THIS BLOCK) -->
+  <div id="gate" style="max-width:520px;margin:24px auto;padding:16px;border:1px solid #333;border-radius:12px;">
+    <h2 style="margin:0 0 8px;">Enter Access Code</h2>
+    <p style="margin:0 0 12px;opacity:.85;">This tool is gated. No code = no party.</p>
+
+    <input id="access-code" placeholder="e.g. NOVA-7H3K-2025"
+      style="width:100%;padding:10px;border-radius:10px;border:1px solid #444;background:#111;color:#fff;" />
+
+    <button id="unlock-btn"
+      style="margin-top:10px;width:100%;padding:10px;border-radius:10px;border:0;background:#6d28d9;color:#fff;font-weight:700;">
+      Unlock
+    </button>
+
+    <div id="gate-msg" style="margin-top:10px;font-size:14px;"></div>
+  </div>
+  <!-- 🔒 END ACCESS GATE UI -->
+
+  <div id="app" style="display:none;">
+    <div class="app-container">
+     <div class="header">
     <h1 id="app-title">CaptionVault: Amplified</h1>
     <p id="app-subtitle">Tune the Frequency. Set the Vibe.</p>
    </div>
@@ -1934,8 +1966,82 @@
     }
 
     bindCaptionActions();
+
+   // ✅ PASTE your Apps Script Web App URL here:
+const ACCESS_GATE_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
+// OPTIONAL if you set API_KEY in Apps Script:
+// const ACCESS_GATE_KEY = "PASTE_SAME_KEY_HERE";
+
+function setGateMessage(msg, ok=false){
+  const el = document.getElementById("gate-msg");
+  el.textContent = msg;
+  el.style.color = ok ? "#86efac" : "#fca5a5";
+}
+
+function unlockApp(){
+  document.getElementById("gate").style.display = "none";
+  document.getElementById("app").style.display = "block";
+}
+
+function lockApp(){
+  document.getElementById("gate").style.display = "block";
+  document.getElementById("app").style.display = "none";
+}
+
+async function validateCode(code){
+  const url = new URL(ACCESS_GATE_URL);
+  url.searchParams.set("code", code);
+  // if using key:
+  // url.searchParams.set("key", ACCESS_GATE_KEY);
+
+  const res = await fetch(url.toString(), { method: "GET" });
+  return await res.json();
+}
+
+// Remember code (optional)
+function saveCode(code){ localStorage.setItem("cv_access_code", code); }
+function loadCode(){ return localStorage.getItem("cv_access_code") || ""; }
+
+document.getElementById("unlock-btn").addEventListener("click", async () => {
+  const code = (document.getElementById("access-code").value || "").trim();
+  if(!code){ setGateMessage("Type a code first."); return; }
+
+  setGateMessage("Checking code...");
+  try{
+    const result = await validateCode(code);
+    if(result.ok && result.valid){
+      saveCode(code);
+      setGateMessage("Unlocked ✅", true);
+      unlockApp();
+    } else {
+      setGateMessage("Nope. Invalid code: " + (result.reason || "UNKNOWN"));
+      lockApp();
+    }
+  } catch (e){
+    setGateMessage("Gate check failed. (Bad URL or script not deployed?)");
+  }
+});
+
+// Auto-check saved code on load
+window.addEventListener("load", async () => {
+  const saved = loadCode();
+  if(saved){
+    document.getElementById("access-code").value = saved;
+    try{
+      const result = await validateCode(saved);
+      if(result.ok && result.valid){
+        unlockApp();
+        return;
+      }
+    } catch(e){}
+  }
+  lockApp();
+});
+
     document.querySelector('.generate-btn').addEventListener('click', generateCaption);
   </script>
+      </div> <!-- closes .app-container -->
+  </div> <!-- closes #app --> 
  </body>
 </html>
 
